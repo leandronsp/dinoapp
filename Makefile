@@ -1,20 +1,21 @@
 web.server:
+	@docker build -t dinoapp --target base .
 	@docker run \
 		--rm \
-		-d \
 		--name dinoapp \
 		-it \
 		-v $(CURDIR):/app \
 		-w /app \
 		-p 3000:3000 \
-		ruby \
+		dinoapp \
 		bash -c "ruby web/server.rb"
 
 bash:
+	@docker build -t dinoapp --target base .
 	@docker run \
 		--rm \
 		-it \
 		-v $(CURDIR):/app \
 		-w /app \
-		ruby \
+		dinoapp \
 		bash
