@@ -24,10 +24,10 @@ Open `localhost:3000`. Try out login using the following credentials:
 
 Setup / provisioning
 ```bash
-make prod.setup
+make prod.setup instance=<remote-machine>
 ```
 
 Deploy
 ```bash
-make prod.deploy
+make prod.deploy instance=<remote-machine>
 ```

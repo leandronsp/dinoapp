@@ -21,7 +21,7 @@ bash:
 		bash
 
 prod.setup:
-	@bash iac/setup dinoapp
+	@bash iac/setup ${instance}
 
 prod.deploy:
-	@bash iac/deploy dinoapp
+	@bash iac/deploy ${instance}
