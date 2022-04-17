@@ -19,3 +19,9 @@ bash:
 		-w /app \
 		dinoapp \
 		bash
+
+prod.setup:
+	@bash iac/setup dinoapp
+
+prod.deploy:
+	@bash iac/deploy dinoapp

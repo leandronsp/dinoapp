@@ -1,5 +1,5 @@
 # dinoapp
-A toy application. 
+A toy application.
 
 ## Playset
 
@@ -24,10 +24,10 @@ Open `localhost:3000`. Try out login using the following credentials:
 
 Setup / provisioning
 ```bash
-bash iac/setup <remote-machine>
+make prod.setup
 ```
 
 Deploy
 ```bash
-bash iac/deploy <remote-machine>
+make prod.deploy
 ```
