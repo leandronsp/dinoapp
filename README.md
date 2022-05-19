@@ -13,6 +13,8 @@ A toy application.
 ## Running
 
 ```bash
+make install.gems
+make db.seed
 make web.server
 ```
 Open `localhost:3000`. Try out login using the following credentials:
