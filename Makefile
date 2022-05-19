@@ -31,7 +31,7 @@ web.server:
 		-w /app \
 		-p 3000:3000 \
 		dinoapp \
-		bash -c "ruby web/run"
+		bash -c "ruby bin/server"
 
 bash:
 	@docker build -t dinoapp --target base .
