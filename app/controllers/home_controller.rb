@@ -1,9 +1,15 @@
 class HomeController < BaseController
   def index
     email = @request.cookies['email']
-    return success(default_header, view('login')) unless email
+    user  = HomeContext.call(email)
 
-    body = view('home').gsub(/{{email}}/, email)
-    success(default_header, body)
+    if user
+      success(
+        default_header,
+        view('home').gsub(/{{email}}/, user.email)
+      )
+    else
+      success(default_header, view('login'))
+    end
   end
 end

@@ -1,12 +1,6 @@
 require 'rack'
 require 'json'
 
-require './config/db/connection'
-require './app/controllers/base_controller'
-Dir['./app/controllers/*.rb'].each {|file| require file }
-
-require './config/routes'
-
 class Dinoapp
   class Request
     attr_reader :verb, :path, :headers, :params, :cookies

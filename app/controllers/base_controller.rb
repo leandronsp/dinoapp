@@ -7,6 +7,10 @@ class BaseController
 
   def self.dispatch(action, request)
     new(request).send(action.to_sym)
+  rescue UnauthorizedError
+    new(request).unauthorized
+  rescue NotFoundError
+    new(request).not_found
   end
 
   def not_found    = [404, default_header, not_found_view]

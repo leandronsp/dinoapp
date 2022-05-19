@@ -9,19 +9,10 @@ class SessionsController < BaseController
   def create
     email    = @request.params['email']
     password = @request.params['password']
-
-    query = <<-SQL
-      SELECT * FROM users
-      WHERE email = '#{email}' AND password = '#{password}'
-    SQL
-
-    connection = DB::Connection.new
-    result = connection.execute(query)
-
-    return unauthorized if result.nil? || result.empty?
+    user     = LoginContext.call(email, password)
 
     redirect({
-      'Set-Cookie' => "email=#{email}; path=/; HttpOnly",
+      'Set-Cookie' => "email=#{user.email}; path=/; HttpOnly",
       'Location' => "http://#{@request.headers['Host']}/"
     })
   end
