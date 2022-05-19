@@ -1,4 +1,4 @@
-require './db/connection'
+require './config/db/connection'
 
 connection = DB::Connection.new
 

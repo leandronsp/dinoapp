@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require './lib/server'
-require './lib/app'
+require './lib/popcorn/server'
+require './lib/dinoapp'
 
-Server.run App.new, 3000
+Popcorn::Server.run Dinoapp.new, 3000
