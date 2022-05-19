@@ -52,8 +52,12 @@ loop do
 
   # Request cookies
   if cookie = headers['Cookie']
-    cookie_name, cookie_value = cookie.split('=')
-    cookies[cookie_name] = CGI.unescape(cookie_value)
+    cookies =
+      cookie
+      .split(';')
+      .map { |pair| pair.split('=') }
+      .map { |(name, value)| [name.strip, CGI.unescape(value.gsub(/\r\n/, ''))] }
+      .to_h
   end
 
   # Routing Response
@@ -71,16 +75,15 @@ loop do
     email = params['email']
     password = params['password']
 
-    query = {
-      'table' => 'User',
-      'action' => 'find_by_email_and_password',
-      'args' => [email, password]
-    }
+    query = <<-SQL
+      SELECT * FROM users
+      WHERE email = '#{email}' AND password = '#{password}'
+    SQL
 
     connection = DB::Connection.new
-    result = connection.exec(query.to_json)
+    result = connection.execute(query)
 
-    if result && result != 'null'
+    if result && result != 'null' && !result.empty?
       # Login succeeded
       response_status = 301
 

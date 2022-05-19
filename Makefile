@@ -1,3 +1,25 @@
+install.gems:
+	@docker build -t dinoapp --target base .
+	@docker run \
+		--rm \
+		-it \
+		-v $(CURDIR):/app \
+		-v rubygems_dinoapp:/usr/local/bundle \
+		-w /app \
+		dinoapp \
+		bash -c "gem install sqlite3"
+
+db.seed:
+	@docker build -t dinoapp --target base .
+	@docker run \
+		--rm \
+		-it \
+		-v $(CURDIR):/app \
+		-v rubygems_dinoapp:/usr/local/bundle \
+		-w /app \
+		dinoapp \
+		bash -c "ruby tasks/seed_db.rb"
+
 web.server:
 	@docker build -t dinoapp --target base .
 	@docker run \
@@ -5,6 +27,7 @@ web.server:
 		--name dinoapp \
 		-it \
 		-v $(CURDIR):/app \
+		-v rubygems_dinoapp:/usr/local/bundle \
 		-w /app \
 		-p 3000:3000 \
 		dinoapp \
@@ -16,6 +39,7 @@ bash:
 		--rm \
 		-it \
 		-v $(CURDIR):/app \
+		-v rubygems_dinoapp:/usr/local/bundle \
 		-w /app \
 		dinoapp \
 		bash
