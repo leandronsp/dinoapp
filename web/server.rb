@@ -3,14 +3,18 @@ require 'cgi'
 require 'json'
 require './db/connection'
 
-PORT = 3000
-socket = TCPServer.new('0.0.0.0', PORT)
+PORT   = 3000
+socket = Socket.new(:INET, :STREAM)
+addr   = Socket.sockaddr_in(PORT, '0.0.0.0')
+
+socket.bind(addr)
+socket.listen(2)
 
 puts "Listening to the port #{PORT}..."
 
 loop do
   # Wait for a new TCP connection..."
-  client = socket.accept
+  client, _ = socket.accept
 
   # Request
   request = ''
