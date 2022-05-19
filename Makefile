@@ -7,7 +7,7 @@ install.gems:
 		-v rubygems_dinoapp:/usr/local/bundle \
 		-w /app \
 		dinoapp \
-		bash -c "gem install sqlite3"
+		bash -c "gem install rack byebug sqlite3"
 
 db.seed:
 	@docker build -t dinoapp --target base .
@@ -31,7 +31,7 @@ web.server:
 		-w /app \
 		-p 3000:3000 \
 		dinoapp \
-		bash -c "ruby web/server.rb"
+		bash -c "ruby web/run"
 
 bash:
 	@docker build -t dinoapp --target base .

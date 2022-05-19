@@ -1,126 +1,107 @@
 require 'socket'
+require 'rack'
 require 'cgi'
-require 'json'
-require './db/connection'
+require 'stringio'
+require 'byebug'
 
-PORT   = 3000
-socket = Socket.new(:INET, :STREAM)
-addr   = Socket.sockaddr_in(PORT, '0.0.0.0')
+class Server
+  def initialize(rack_app, port)
+    @rack_app = rack_app
+    @port     = port
+    @socket   = Socket.new(:INET, :STREAM)
+    addr      = Socket.sockaddr_in(@port, '0.0.0.0')
 
-socket.bind(addr)
-socket.listen(2)
+    @socket.bind(addr)
+    @socket.listen(2)
 
-puts "Listening to the port #{PORT}..."
-
-loop do
-  # Wait for a new TCP connection..."
-  client, _ = socket.accept
-
-  # Request
-  request = ''
-  headers = {}
-  body    = ''
-  params  = {}
-  cookies = {}
-
-  request_verb = ''
-  request_path = ''
-
-  while line = client.gets
-    break if line == "\r\n"
-
-    # Extract Request verb and path
-    if line.match(/HTTP\/.*?/)
-      request_verb, request_path, _ = line.split
-    end
-
-    request += line
-
-    # Request headers
-    header_key, header_value = line.split(': ')
-    headers[header_key] = header_value
+    puts "Listening to the port #{@port}..."
   end
 
-  puts request
-  puts "\n"
-
-  # Request body
-  content_length = headers['Content-Length']
-  body = client.read(content_length.to_i) if content_length
-
-  # Extract params from body
-  body_parts = body.split('&')
-  params = body_parts
-    .map { |part| part.split('=').map(&CGI.method(:unescape)) }
-    .to_h
-
-  # Request cookies
-  if cookie = headers['Cookie']
-    cookies =
-      cookie
-      .split(';')
-      .map { |pair| pair.split('=') }
-      .map { |(name, value)| [name.strip, CGI.unescape(value.gsub(/\r\n/, ''))] }
-      .to_h
+  def self.run(*args)
+    new(*args).run
   end
 
-  # Routing Response
-  response_headline = "HTTP/2.0"
-  response_status   = 200
-  response_headers  = { 'Content-Type' => 'text/html' }
+  def run
+    loop do
+      # Wait for a new TCP connection..."
+      client, _ = @socket.accept
 
-  case [request_verb, request_path]
-  in 'POST', '/logout'
-    response_status = 301
+      # Request
+      request = ''
+      headers = {}
+      body    = ''
+      params  = {}
+      cookies = {}
 
-    response_headers['Set-Cookie'] = "email=; path=/; HttpOnly; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
-    response_headers['Location'] = "http://#{headers['Host']}/"
-  in 'POST', '/login'
-    email = params['email']
-    password = params['password']
+      request_verb = ''
+      request_path = ''
 
-    query = <<-SQL
-      SELECT * FROM users
-      WHERE email = '#{email}' AND password = '#{password}'
-    SQL
+      while line = client.gets
+        break if line == "\r\n"
 
-    connection = DB::Connection.new
-    result = connection.execute(query)
+        # Extract Request verb and path
+        if line.match(/HTTP\/.*?/)
+          request_verb, request_path, _ = line.split
+        end
 
-    if result && result != 'null' && !result.empty?
-      # Login succeeded
-      response_status = 301
+        request += line
 
-      response_headers['Set-Cookie'] = "email=#{email}; path=/; HttpOnly"
-      response_headers['Location'] = "http://#{headers['Host']}/"
-    else
-      # Incorrect Email/Password
-      response_status = 401
-      response_body = File.read('./web/html/unauthorized.html')
+        # Request headers
+        header_key, header_value = line.split(': ')
+        headers[header_key] = header_value
+      end
+
+      puts request
+      puts "\n"
+
+      # Request body
+      content_length = headers['Content-Length']
+      body = client.read(content_length.to_i) if content_length
+
+      # Extract params from body
+      body_parts = body.split('&')
+      params = body_parts
+        .map { |part| part.split('=').map(&CGI.method(:unescape)) }
+        .to_h
+
+      # Request cookies
+      if cookie = headers['Cookie']
+        cookies =
+          cookie
+          .split(';')
+          .map { |pair| pair.split('=') }
+          .map { |(name, value)| [name.strip, CGI.unescape(value.gsub(/\r\n/, ''))] }
+          .to_h
+      end
+
+      # Routing Response
+      rack_data = {
+        'REQUEST_METHOD' => request_verb,
+        'PATH_INFO' => request_path.split('?')[0],
+        'QUERY_STRING' => request_path.split('?')[1],
+        'SERVER_PORT' => @port,
+        'CONTENT_LENGTH' => content_length,
+        'HTTP_COOKIE' => headers['Cookie'].gsub(/\r\n/, ''),
+        'rack.input' => StringIO.new(body)
+      }
+
+      headers.each do |(name, value)|
+        rack_data[name] = value.gsub(/\r\n/, '') if value
+      end
+
+      response_status, response_headers, response_body = @rack_app.call(rack_data)
+
+      response_headers_str =
+        response_headers.reduce('') do |acc, (key, value)|
+          acc += "#{key}: #{value}\r\n"; acc
+        end
+
+      response = "HTTP/2.0 #{response_status}\r\n#{response_headers_str}\r\n#{response_body}"
+
+      client.puts(response.strip.gsub(/\n+/, "\n"))
+
+      # Close connection
+      client.close
     end
-  in 'GET', '/'
-    # Display Homepage
-    if email = cookies['email']
-      view = File.read('./web/html/home.html')
-      response_body = view.gsub(/{{email}}/, email)
-    else
-      response_body = File.read('./web/html/login.html')
-    end
-  else
-    # Not Found
-    response_status = 404
-    response_body = File.read('./web/html/not_found.html')
   end
-
-  response_headers_str =
-    response_headers.reduce('') do |acc, (key, value)|
-      acc += "#{key}: #{value}\r\n"; acc
-    end
-
-  response = "#{response_headline} #{response_status}\r\n#{response_headers_str}\r\n#{response_body}"
-
-  client.puts(response.strip.gsub(/\n+/, "\n"))
-
-  # Close connection
-  client.close
 end

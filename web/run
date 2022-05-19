@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+require './web/app'
+require './web/server'
+
+Server.run App.new, 3000
