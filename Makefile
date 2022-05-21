@@ -7,7 +7,7 @@ install.gems:
 		-v rubygems_dinoapp:/usr/local/bundle \
 		-w /app \
 		dinoapp \
-		bash -c "gem install rack byebug sqlite3"
+		bash -c "gem install rack byebug sqlite3 adelnor puma unicorn rack-handlers"
 
 db.seed:
 	@docker build -t dinoapp --target base .

@@ -33,6 +33,8 @@ class Dinoapp
   def call(env)
     request = ::Dinoapp::Request.build(env)
 
-    Routes.lookup(request)
+    status, headers, body = Routes.lookup(request)
+
+    [status, headers, [body]]
   end
 end

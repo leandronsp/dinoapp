@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 
-require './lib/popcorn/server'
+require 'rack/handler/puma'
+require 'rack/handler/unicorn'
+require 'adelnor'
+
 require './lib/dinoapp'
 
 require './config/db/connection'
@@ -20,4 +23,7 @@ Dir['./app/controllers/*.rb'].each {|file| require file }
 
 require './config/routes'
 
-Popcorn::Server.run Dinoapp.new, 3000
+Adelnor::Server.run Dinoapp.new, 3000
+
+#Rack::Handler::Puma.run Dinoapp.new, Port: 3000
+#Rack::Handler::Unicorn.run Dinoapp.new, Port: 3000
